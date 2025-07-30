@@ -22,7 +22,10 @@ class PlayerControlActivity : AppCompatActivity() {
         binding = ActivityPlayerControlBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        deviceIp = intent.getStringExtra("device_ip") ?: return finish()
+        deviceIp = intent.getStringExtra("device_ip") ?: run {
+            finish()
+            return
+        }
 
         setupViewModel()
         setupListeners()
@@ -78,9 +81,9 @@ class PlayerControlActivity : AppCompatActivity() {
     private fun setupObservers() {
         viewModel.nowPlaying.observe(this) { nowPlaying ->
             nowPlaying?.let {
-                binding.songTitle.text = it.title ?: "Unknown Title"
-                binding.songArtist.text = it.artist ?: "Unknown Artist"
-                binding.songAlbum.text = it.album ?: "Unknown Album"
+                binding.songTitle.text = it.title ?: getString(R.string.unknown_title)
+                binding.songArtist.text = it.artist ?: getString(R.string.unknown_artist)
+                binding.songAlbum.text = it.album ?: getString(R.string.unknown_album)
                 
                 if (it.isPlaying == true) {
                     binding.playPauseButton.setImageResource(R.drawable.ic_pause)
@@ -107,7 +110,7 @@ class PlayerControlActivity : AppCompatActivity() {
         
         viewModel.errorMessage.observe(this) { message ->
             message?.let {
-                // 显示错误信息
+                Snackbar.make(binding.root, it, Snackbar.LENGTH_LONG).show()
             }
         }
     }
