@@ -9,13 +9,12 @@ import com.example.saltplayerremote.utils.NetworkUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 class ScanViewModel : ViewModel() {
 
-    private val _devices = MutableLiveData<List<Device>>()
+    private val _devices = MutableLiveData<List<Device>>(emptyList())
     val devices: LiveData<List<Device>> get() = _devices
 
     private val _isScanning = MutableLiveData<Boolean>(false)
@@ -36,7 +35,7 @@ class ScanViewModel : ViewModel() {
             try {
                 // 在后台线程执行扫描
                 val foundDevices = withContext(Dispatchers.IO) {
-                    scanNetwork()
+                    NetworkUtils.scanLocalNetwork()
                 }
                 
                 _devices.value = foundDevices.map { Device(ipAddress = it) }
@@ -49,38 +48,6 @@ class ScanViewModel : ViewModel() {
             } finally {
                 _isScanning.value = false
             }
-        }
-    }
-    
-    private suspend fun scanNetwork(): List<String> {
-        return try {
-            // 获取本地IP前缀（如192.168.1）
-            val localIpPrefix = NetworkUtils.getLocalIpAddress()?.substringBeforeLast('.')
-                ?: return emptyList()
-            
-            val devices = mutableListOf<String>()
-            
-            // 扫描1-255范围内的IP地址
-            for (i in 1..255) {
-                if (!scanJob?.isActive!!) break
-                
-                val host = "$localIpPrefix.$i"
-                if (NetworkUtils.isReachable(host, 35373)) {
-                    devices.add(host)
-                }
-                
-                // 每扫描10个IP更新一次UI
-                if (i % 10 == 0) {
-                    _devices.postValue(devices.map { Device(ipAddress = it) })
-                }
-                
-                // 添加小延迟避免阻塞
-                delay(20)
-            }
-            
-            return devices
-        } catch (e: Exception) {
-            throw e
         }
     }
 
