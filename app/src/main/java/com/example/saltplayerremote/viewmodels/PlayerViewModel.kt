@@ -7,7 +7,6 @@ import androidx.lifecycle.viewModelScope
 import com.example.saltplayerremote.models.NowPlaying
 import com.example.saltplayerremote.network.NeteaseApi
 import com.example.saltplayerremote.network.SaltPlayerApi
-import com.example.saltplayerremote.utils.NetworkUtils
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -15,28 +14,26 @@ import retrofit2.Response
 
 class PlayerViewModel : ViewModel() {
 
-    private var _nowPlaying = MutableLiveData<NowPlaying?>()
+    private val _nowPlaying = MutableLiveData<NowPlaying?>(null)
     val nowPlaying: LiveData<NowPlaying?> get() = _nowPlaying
 
-    private var _coverUrl = MutableLiveData<String?>()
+    private val _coverUrl = MutableLiveData<String?>(null)
     val coverUrl: LiveData<String?> get() = _coverUrl
 
-    private var _lyricsUrl = MutableLiveData<String?>()
+    private val _lyricsUrl = MutableLiveData<String?>(null)
     val lyricsUrl: LiveData<String?> get() = _lyricsUrl
 
-    private var _isLoading = MutableLiveData<Boolean>()
+    private val _isLoading = MutableLiveData<Boolean>(false)
     val isLoading: LiveData<Boolean> get() = _isLoading
 
-    private var _errorMessage = MutableLiveData<String?>()
+    private val _errorMessage = MutableLiveData<String?>(null)
     val errorMessage: LiveData<String?> get() = _errorMessage
 
     private var refreshJob: Job? = null
-    private var currentIp: String? = null
     private var saltPlayerApi: SaltPlayerApi? = null
     private val neteaseApi = NeteaseApi.create()
 
     fun init(ipAddress: String) {
-        currentIp = ipAddress
         saltPlayerApi = SaltPlayerApi.create(ipAddress)
         startRefreshing()
     }
@@ -46,6 +43,7 @@ class PlayerViewModel : ViewModel() {
     }
 
     private fun startRefreshing() {
+        refreshJob?.cancel()
         refreshJob = viewModelScope.launch {
             while (true) {
                 refreshNowPlaying()
@@ -56,18 +54,18 @@ class PlayerViewModel : ViewModel() {
 
     private suspend fun refreshNowPlaying() {
         try {
-            _isLoading.postValue(true)
+            _isLoading.value = true
             val response = saltPlayerApi?.getNowPlaying()
-            if (response?.isSuccessful == true) {
-                _nowPlaying.postValue(response.body())
+            if (response != null && response.isSuccessful) {
+                _nowPlaying.value = response.body()
                 response.body()?.let { fetchSongInfo(it) }
             } else {
-                _errorMessage.postValue("Failed to get current song: ${response?.code()}")
+                _errorMessage.value = "Failed to get current song: ${response?.code()}"
             }
         } catch (e: Exception) {
-            _errorMessage.postValue("Network error: ${e.message}")
+            _errorMessage.value = "Network error: ${e.message}"
         } finally {
-            _isLoading.postValue(false)
+            _isLoading.value = false
         }
     }
 
@@ -79,12 +77,14 @@ class PlayerViewModel : ViewModel() {
             
             val searchResponse = neteaseApi.searchSong(query = query)
             if (searchResponse.isSuccessful) {
-                val songId = searchResponse.body()?.result?.songs?.firstOrNull()?.id ?: return
+                val song = searchResponse.body()?.result?.songs?.firstOrNull()
+                val songId = song?.id ?: return
+                
                 val songInfoResponse = neteaseApi.getSongInfo(id = songId.toString())
                 if (songInfoResponse.isSuccessful) {
                     val neteaseSong = songInfoResponse.body()?.firstOrNull()
-                    _coverUrl.postValue(neteaseSong?.pic)
-                    _lyricsUrl.postValue(neteaseSong?.lrc)
+                    _coverUrl.value = neteaseSong?.pic
+                    _lyricsUrl.value = neteaseSong?.lrc
                 }
             }
         } catch (e: Exception) {
