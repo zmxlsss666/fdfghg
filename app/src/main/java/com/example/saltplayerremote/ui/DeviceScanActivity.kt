@@ -13,7 +13,7 @@ import com.example.saltplayerremote.databinding.ActivityDeviceScanBinding
 import com.example.saltplayerremote.viewmodels.ScanViewModel
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.launch
-
+import com.example.saltplayerremote.ui.DeviceAdapter
 class DeviceScanActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityDeviceScanBinding
