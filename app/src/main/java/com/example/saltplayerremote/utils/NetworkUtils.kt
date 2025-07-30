@@ -32,9 +32,12 @@ object NetworkUtils {
         try {
             val interfaces = NetworkInterface.getNetworkInterfaces() ?: return null
             for (intf in Collections.list(interfaces)) {
+                // 跳过无效接口
+                if (intf.isLoopback || !intf.isUp) continue
+                
                 val addrs = Collections.list(intf.inetAddresses)
                 for (addr in addrs) {
-                    if (!addr.isLoopbackAddress && addr is InetAddress) {
+                    if (!addr.isLoopbackAddress) {
                         val sAddr = addr.hostAddress
                         if (sAddr != null && sAddr.indexOf(':') < 0) {
                             return sAddr
@@ -43,7 +46,7 @@ object NetworkUtils {
                 }
             }
         } catch (ex: Exception) {
-            ex.printStackTrace()
+            Log.e("NetworkUtils", "Error getting local IP: ${ex.message}")
         }
         return null
     }
