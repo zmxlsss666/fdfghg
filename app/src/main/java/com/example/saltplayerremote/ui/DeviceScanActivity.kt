@@ -10,7 +10,6 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.saltplayerremote.R
 import com.example.saltplayerremote.databinding.ActivityDeviceScanBinding
-import com.example.saltplayerremote.utils.NetworkUtils
 import com.example.saltplayerremote.viewmodels.ScanViewModel
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.launch
@@ -83,9 +82,7 @@ class DeviceScanActivity : AppCompatActivity() {
     }
 
     private fun startScan() {
-        lifecycleScope.launch {
-            viewModel.scanDevices()
-        }
+        viewModel.scanDevices()
     }
 
     private fun saveDeviceIp(ip: String) {
